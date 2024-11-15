@@ -1,0 +1,24 @@
+alkana
+anthropic
+blobconverter
+cohere
+depthai
+google-api-python-client
+google-cloud-speech
+google-generativeai
+-e akari_rag_chatbot/lib/akari_chatgpt_bot/gpt-stream-json-parser/
+grpcio
+grpcio-tools
+langchain
+numpy==1.26.0
+openai
+opencv-python
+PyAudio
+PyJapanglish
+python-dotenv
+six
+SpeechRecognition
+tiktoken
+timeout_decorator
+weaviate-client
+youtube-transcript-api

@@ -1,0 +1,3 @@
+[submodule "lib/akari_rag_chatbot"]
+	path = lib/akari_rag_chatbot
+	url = https://github.com/AkariGroup/akari_rag_chatbot.git
