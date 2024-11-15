@@ -9,6 +9,7 @@ from lib.akari_rag_chatbot.lib.akari_chatgpt_bot.lib.chat_akari_grpc import (
 )
 from gpt_stream_parser import force_parse_json
 
+
 class ChatStreamAkariIntroducer(ChatStreamAkariGrpc):
     """ChatGPTやClaude3を使用して会話を行うためのクラス。"""
 
@@ -38,13 +39,13 @@ class ChatStreamAkariIntroducer(ChatStreamAkariGrpc):
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "talk": {
-                            "type": "string",
-                            "description": "回答",
-                        },
                         "link": {
                             "type": "string",
                             "description": "関連するリンク",
+                        },
+                        "talk": {
+                            "type": "string",
+                            "description": "回答",
                         },
                     },
                     "required": ["link", "talk"],
@@ -70,6 +71,7 @@ class ChatStreamAkariIntroducer(ChatStreamAkariGrpc):
             if delta.function_call is not None:
                 if delta.function_call.arguments is not None:
                     full_response += chunk.choices[0].delta.function_call.arguments
+                    print(full_response)
                     try:
                         data_json = json.loads(full_response)
                         found_last_char = False
@@ -81,31 +83,22 @@ class ChatStreamAkariIntroducer(ChatStreamAkariGrpc):
                     except BaseException:
                         data_json = force_parse_json(full_response)
                     if data_json is not None:
-                        if not get_link  and "link" in data_json:
-                            real_time_link_response = str(data_json["link"])
-                            print(real_time_link_response)
+                        if "talk" in data_json:
+                            if not get_link and "link" in data_json:
+                                get_link = True
+                                link = data_json["link"]
+                                print(f"============Link: {link}")
+                            real_time_response = str(data_json["talk"])
                             for char in self.last_char:
-                                pos = real_time_link_response[sentence_index:].find(char)
+                                pos = real_time_response[sentence_index:].find(char)
                                 if pos >= 0:
-                                    link_sentence = real_time_link_response[
+                                    sentence = real_time_response[
                                         sentence_index : sentence_index + pos + 1
                                     ]
                                     sentence_index += pos + 1
-                                    if link_sentence != "":
-                                        get_link = True
-                                        print(link_sentence)
-                                        yield link_sentence
-                        real_time_response = str(data_json["talk"])
-                        for char in self.last_char:
-                            pos = real_time_response[sentence_index:].find(char)
-                            if pos >= 0:
-                                sentence = real_time_response[
-                                    sentence_index : sentence_index + pos + 1
-                                ]
-                                sentence_index += pos + 1
-                                if sentence != "":
-                                    yield sentence
-                                break
+                                    if sentence != "":
+                                        yield sentence
+                                    break
 
     def chat_and_link(
         self,
