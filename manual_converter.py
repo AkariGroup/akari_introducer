@@ -1,5 +1,6 @@
 import argparse
 import os
+import urllib.parse
 
 AKARI_DOC_URL = "https://akarigroup.github.io/docs/"
 
@@ -7,6 +8,7 @@ AKARI_DOC_URL = "https://akarigroup.github.io/docs/"
 def convert_path_to_local_html(file_path):
     # _sources/ を削除し、拡張子を .html に変更
     new_path = file_path.replace("_sources/", "")
+    new_path = urllib.parse.quote(new_path)
     new_path = new_path.replace("rst.txt", "html")
     return new_path
 
@@ -14,7 +16,9 @@ def convert_path_to_local_html(file_path):
 def convert_path_to_public_url(file_path):
     # _sources/ より前を削除し、拡張子を .html に変更
     new_path = file_path.split("_sources/", 1)[-1]
+    new_path = urllib.parse.quote(new_path)
     new_path = new_path.replace("rst.txt", "html")
+    new_path = new_path.replace("[", "html")
     return new_path
 
 
@@ -105,7 +109,9 @@ def main() -> None:
                 path=file_path, text=text
             )
             if args.save_path:
-                path = os.path.join(args.save_path, os.path.relpath(file_path, args.path))
+                path = os.path.join(
+                    args.save_path, os.path.relpath(file_path, args.path)
+                )
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 with open(path, "w", encoding="utf-8") as save_file:
                     save_file.write(output_text)

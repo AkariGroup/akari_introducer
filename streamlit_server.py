@@ -105,12 +105,12 @@ def main():
                             st.session_state.worker.cur_url[0]
                         )  # ビデオID抽出用関数に切り出す
                         embed_url = f"https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1"
-                        st.components.v1.iframe(embed_url, width=1440, height=810)
+                        st.components.v1.iframe(embed_url, width=1520, height=855)
                     else:
                         # その他Webページの埋め込み
                         st.markdown(
                             f'<iframe src="{st.session_state.worker.cur_url[0]}" '
-                            f'style="width: 1440px; height: 810px; overflow: auto; display: block;"></iframe>',
+                            f'style="width: 1520px; height: 855px; overflow: auto; display: block;"></iframe>',
                             unsafe_allow_html=True,
                         )
 

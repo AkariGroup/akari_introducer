@@ -1,3 +1,5 @@
+import asyncio
+import grpc
 import json
 import os
 import sys
@@ -9,9 +11,37 @@ from lib.akari_rag_chatbot.lib.akari_chatgpt_bot.lib.chat_akari_grpc import (
 )
 from gpt_stream_parser import force_parse_json
 
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), "grpc")
+)
+import streamlit_server_pb2
+import streamlit_server_pb2_grpc
+
 
 class ChatStreamAkariIntroducer(ChatStreamAkariGrpc):
     """ChatGPTやClaude3を使用して会話を行うためのクラス。"""
+
+    def __init__(self):
+        super().__init__()
+        streamlit_channel = grpc.insecure_channel("localhost:10010")
+        self.streamlit_stub = streamlit_server_pb2_grpc.StreamlitServerServiceStub(
+            streamlit_channel
+        )
+
+    async def send_link(self, url: str) -> None:
+        """gRPCを使用してリンクを送信するメソッド。
+
+        Args:
+            url (str): 送信するリンク。
+
+        """
+        try:
+            self.streamlit_stub.SendUrl(
+                streamlit_server_pb2.SendUrlRequest(url=url),
+            )
+        except grpc.RpcError as e:
+            print(f"Error: {e}")
+            return
 
     def chat_and_link_gpt(
         self,
@@ -71,7 +101,6 @@ class ChatStreamAkariIntroducer(ChatStreamAkariGrpc):
             if delta.function_call is not None:
                 if delta.function_call.arguments is not None:
                     full_response += chunk.choices[0].delta.function_call.arguments
-                    print(full_response)
                     try:
                         data_json = json.loads(full_response)
                         found_last_char = False
@@ -88,6 +117,7 @@ class ChatStreamAkariIntroducer(ChatStreamAkariGrpc):
                                 get_link = True
                                 link = data_json["link"]
                                 print(f"============Link: {link}")
+                                asyncio.run(self.send_link(link))
                             real_time_response = str(data_json["talk"])
                             for char in self.last_char:
                                 pos = real_time_response[sentence_index:].find(char)

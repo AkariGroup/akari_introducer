@@ -23,6 +23,13 @@ def main() -> None:
         type=str,
         help="Weaviate collection name",
     )
+    parser.add_argument(
+        "-s",
+        "--show_search",
+        default="",
+        type=str,
+        help="Show search result",
+    )
     args = parser.parse_args()
     chat_stream = ChatStreamAkariIntroducer()
     weaviate_controller = WeaviateRagController()
@@ -49,8 +56,9 @@ def main() -> None:
         print(f"search time: {time.time() - rag_start:.2f} [s]")
         contexts = ""
         for p in response.objects:
-            print(f"source: {p.properties['source']}")
-            print(f"content: {p.properties['content']}")
+            if args.show_search:
+                print(f"source: {p.properties['source']}")
+                print(f"content: {p.properties['content']}")
             contexts += p.properties["content"]
         system_prompt = system_prompt_creator(context=contexts)
         for i, model in enumerate(args.model):
