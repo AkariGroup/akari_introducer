@@ -9,9 +9,11 @@ package streamlit_server;
 message SendUrlRequest {
   string url = 1;
 }
-message SendUrlReply {}
+message SendUrlReply {
+  bool success = 1;
+}
 
-service URLService {
+service StreamlitServerService {
   // 新しいURLを送信
   rpc SendUrl (SendUrlRequest) returns (SendUrlReply) {}
 }
