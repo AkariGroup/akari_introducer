@@ -5,10 +5,10 @@ import grpc
 import qrcode
 import os
 import sys
+import time
 from concurrent import futures
 from PIL import Image
 import threading
-from streamlit.runtime.scriptrunner import add_script_run_ctx
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "lib/grpc"))
 import streamlit_server_pb2
@@ -88,13 +88,22 @@ def main():
     left_placeholder = left_col.empty()  # 動的更新用のプレースホルダー
     right_placeholder = right_col.empty()  # 動的更新用のプレースホルダー
     prev_url = ""
+    last_updated_time = time.time()
+    UPDATE_INTERVAL = 100
+    DEFAULT_URL = "https://www.youtube.com/watch?v=hufXSDTFMVo&t=1s"
+    st.session_state.worker.cur_url[0] = DEFAULT_URL
     with right_placeholder:
         st.image(DEFAULT_IMAGE)
     while True:
+        if st.session_state.worker.cur_url[0] == "":
+            st.session_state.worker.cur_url[0] = DEFAULT_URL
+            last_updated_time = time.time()
+        if time.time() - last_updated_time > UPDATE_INTERVAL:
+            st.session_state.worker.cur_url[0] = ""
         if st.session_state.worker.cur_url[0] != prev_url:
             prev_url = st.session_state.worker.cur_url[0]
+            last_updated_time = time.time()
             with left_placeholder:
-                print("OK1")
                 if "worker" in st.session_state:
                     if (
                         "youtube.com" in st.session_state.worker.cur_url[0]
@@ -113,8 +122,6 @@ def main():
                             f'style="width: 1520px; height: 855px; overflow: auto; display: block;"></iframe>',
                             unsafe_allow_html=True,
                         )
-
-            print("OK2")
             with right_placeholder:
                 # QRコードを表示（上部）
                 if "worker" in st.session_state and st.session_state.worker.cur_url[0]:
@@ -123,9 +130,9 @@ def main():
                     overlay_image = copy.deepcopy(DEFAULT_IMAGE)
                     overlay_image.paste(qr_resized, (170, 1125))
                     st.image(overlay_image)
-                    print("OK3")
                 else:
                     st.image(DEFAULT_IMAGE)
+        time.sleep(0.1)
 
 
 if __name__ == "__main__":
