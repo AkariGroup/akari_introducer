@@ -24,8 +24,8 @@ def convert_path_to_public_url(file_path):
 
 def convert_parmlink(title: str) -> str:
     print(f"Title: {title}")
-    new_title = title.replace(" ", "%20")
-    new_title = new_title.lower()
+    new_title = title.lower()
+    new_title = urllib.parse.quote(new_title)
     return new_title
 
 

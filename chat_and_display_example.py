@@ -26,8 +26,7 @@ def main() -> None:
     parser.add_argument(
         "-s",
         "--show_search",
-        default="",
-        type=str,
+        action="store_true",
         help="Show search result",
     )
     args = parser.parse_args()

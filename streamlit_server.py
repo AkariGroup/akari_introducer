@@ -37,7 +37,7 @@ def extract_video_id(url: str) -> str:
     elif "youtu.be/" in url:
         video_id = url.split("youtu.be/")[1]
     else:
-        video_id = url
+        raise ValueError("Invalid URL")
     return video_id
 
 
@@ -105,18 +105,23 @@ def main():
             last_updated_time = time.time()
             with left_placeholder:
                 if "worker" in st.session_state:
+                    play_youtube = False
+                    # YouTube動画なら自動再生する。
                     if (
                         "youtube.com" in st.session_state.worker.cur_url[0]
                         or "youtu.be" in st.session_state.worker.cur_url[0]
                     ):
-                        # YouTube埋め込みロジック
-                        video_id = extract_video_id(
-                            st.session_state.worker.cur_url[0]
-                        )  # ビデオID抽出用関数に切り出す
-                        embed_url = f"https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1"
-                        st.components.v1.iframe(embed_url, width=1520, height=855)
-                    else:
-                        # その他Webページの埋め込み
+                        try:
+                            video_id = extract_video_id(
+                                st.session_state.worker.cur_url[0]
+                            )  # ビデオID抽出用関数に切り出す
+                            embed_url = f"https://www.youtube.com/embed/{video_id}?autoplay=1&mute=1"
+                            st.components.v1.iframe(embed_url, width=1520, height=855)
+                            play_youtube = True
+                        except BaseException:
+                            pass
+                    # それ以外ならURLをそのまま表示
+                    if not play_youtube:
                         st.markdown(
                             f'<iframe src="{st.session_state.worker.cur_url[0]}" '
                             f'style="width: 1520px; height: 855px; overflow: auto; display: block;"></iframe>',
