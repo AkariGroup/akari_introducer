@@ -23,7 +23,12 @@ class GptServer(gpt_server_pb2_grpc.GptServerServiceServicer):
     chatGPTにtextを送信し、返答をvoice_serverに送るgRPCサーバ
     """
 
-    def __init__(self, collection_name: str) -> None:
+    def __init__(
+        self,
+        collection_name: str,
+        weaviate_host: str = "127.0.0.1",
+        weaviate_port: int = 10080,
+    ) -> None:
         """
         コンストラクタ
         Args:
@@ -31,10 +36,14 @@ class GptServer(gpt_server_pb2_grpc.GptServerServiceServicer):
         """
         self.chat_stream_akari_introducer = ChatStreamAkariIntroducer()
         self.messages = []
-        self.messages = [self.chat_stream_akari_introducer.create_message("", role="system")]
+        self.messages = [
+            self.chat_stream_akari_introducer.create_message("", role="system")
+        ]
         voice_channel = grpc.insecure_channel("localhost:10002")
         self.stub = voice_server_pb2_grpc.VoiceServerServiceStub(voice_channel)
-        self.weaviate_controller = WeaviateRagController()
+        self.weaviate_controller = WeaviateRagController(
+            host=weaviate_host, port=weaviate_port
+        )
         self.collections = collection_name
 
     def SetGpt(
@@ -49,7 +58,7 @@ class GptServer(gpt_server_pb2_grpc.GptServerServiceServicer):
         print(f"Receive: {request.text}")
         content = f"{request.text}。"
         tmp_messages = copy.deepcopy(self.messages)
-        tmp_messages.append(self.chat_stream_akari_grpc.create_message(content))
+        tmp_messages.append(self.chat_stream_akari_introducer.create_message(content))
         if is_finish:
             self.messages = copy.deepcopy(tmp_messages)
         if is_finish:
@@ -71,6 +80,7 @@ class GptServer(gpt_server_pb2_grpc.GptServerServiceServicer):
                 system_prompt, role="system"
             )
             response = ""
+            self.stub.StartHeadControl(voice_server_pb2.StartHeadControlRequest())
             for sentence in self.chat_stream_akari_introducer.chat_and_link(
                 tmp_messages, model="gpt-4o"
             ):
@@ -80,7 +90,9 @@ class GptServer(gpt_server_pb2_grpc.GptServerServiceServicer):
             # Sentenceの終了を通知
             self.stub.SentenceEnd(voice_server_pb2.SentenceEndRequest())
             self.messages.append(
-                self.chat_stream_akari_introducer.create_message(response, role="assistant")
+                self.chat_stream_akari_introducer.create_message(
+                    response, role="assistant"
+                )
             )
         else:
             # 途中での第一声とモーション準備。function_callingの確実性のため、モデルはgpt-4-turbo
@@ -91,6 +103,7 @@ class GptServer(gpt_server_pb2_grpc.GptServerServiceServicer):
                 self.stub.SetText(voice_server_pb2.SetTextRequest(text=sentence))
                 response += sentence
         print("")
+        self.chat_stream_akari_introducer.send_reserved_motion()
         return gpt_server_pb2.SetGptReply(success=True)
 
     def SendMotion(
@@ -115,10 +128,28 @@ def main() -> None:
         type=str,
         help="Weaviate collection name",
     )
+    parser.add_argument(
+        "-w",
+        "--weaviate_host",
+        default="127.0.0.1",
+        help="Weaviate host name",
+    )
+    parser.add_argument(
+        "-p",
+        "--weaviate_port",
+        default=10080,
+        type=int,
+        help="Weaviate port number",
+    )
     args = parser.parse_args()
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     gpt_server_pb2_grpc.add_GptServerServiceServicer_to_server(
-        GptServer(collection_name=args.collections), server
+        GptServer(
+            collection_name=args.collections,
+            weaviate_host=args.weaviate_host,
+            weaviate_port=args.weaviate_port,
+        ),
+        server,
     )
     server.add_insecure_port(args.ip + ":" + args.port)
     server.start()
