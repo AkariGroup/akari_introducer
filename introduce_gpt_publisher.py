@@ -102,8 +102,8 @@ class GptServer(gpt_server_pb2_grpc.GptServerServiceServicer):
                 print(f"Send to voice server: {sentence}")
                 self.stub.SetText(voice_server_pb2.SetTextRequest(text=sentence))
                 response += sentence
+                self.chat_stream_akari_introducer.send_reserved_motion()
         print("")
-        self.chat_stream_akari_introducer.send_reserved_motion()
         return gpt_server_pb2.SetGptReply(success=True)
 
     def SendMotion(
