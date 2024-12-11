@@ -23,8 +23,7 @@ AKARIについての質問に対して、webブラウザ上にYoutubeやwebマ�
 
 3. AKARIにGoogle Chromeブラウザをインストールする。
 
-4. Google Chromeブラウザに拡張機能「Ignore X-Frame headers」を追加する。(githubのリンクなどをiframeで表示するため)  
-[リンク](https://chrome.google.com/webstore/detail/ignore-x-frame-headers/gleekbfjekiniecknbkamfmkohkpodhe?pli=1)  
+4. Google Chromeブラウザに拡張機能[Ignore X-Frame headers](https://chrome.google.com/webstore/detail/ignore-x-frame-headers/gleekbfjekiniecknbkamfmkohkpodhe?pli=1)を追加する。(githubのリンクなどをiframeで表示するため)  
 
 ## Weaviateへのデータ追加
 本アプリのRAGであるWeaviateに追加するデータは、  
