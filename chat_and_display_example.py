@@ -1,7 +1,7 @@
 import argparse
 import time
 
-from lib.chat_akari_grpc import ChatStreamAkariIntroducer
+from lib.chat_akari_introducer import ChatStreamAkariIntroducer
 from lib.prompt_creator import system_prompt_creator
 from lib.akari_rag_chatbot.lib.weaviate_rag_controller import WeaviateRagController
 
@@ -19,8 +19,15 @@ def main() -> None:
     parser.add_argument(
         "-c",
         "--collection",
+        default="Akari",
         type=str,
         help="Weaviate collection name",
+    )
+    parser.add_argument(
+        "-s",
+        "--show_search",
+        action="store_true",
+        help="Show search result",
     )
     args = parser.parse_args()
     chat_stream = ChatStreamAkariIntroducer()
@@ -47,16 +54,10 @@ def main() -> None:
         )
         print(f"search time: {time.time() - rag_start:.2f} [s]")
         contexts = ""
-        """
-            print(f"distance: {p.metadata.distance}")
-            print(f"certainty: {p.metadata.certainty}")
-            print(f"score: {p.metadata.score}")
-            print(f"explain_score: {p.metadata.explain_score}")
-            print(f"source: {p.properties['source']}")
-            print(f"content: {p.properties['content']}")
-            print()
-        """
         for p in response.objects:
+            if args.show_search:
+                print(f"source: {p.properties['source']}")
+                print(f"content: {p.properties['content']}")
             contexts += p.properties["content"]
         system_prompt = system_prompt_creator(context=contexts)
         for i, model in enumerate(args.model):

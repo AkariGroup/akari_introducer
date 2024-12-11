@@ -1,0 +1,20 @@
+// url_service.proto
+syntax = "proto3";
+
+package streamlit_server;
+
+// 空のメッセージ型
+
+// URL情報を含むメッセージ
+message SendUrlRequest {
+  string url = 1;
+}
+message SendUrlReply {
+  bool success = 1;
+}
+
+service StreamlitServerService {
+  // 新しいURLを送信
+  rpc SendUrl (SendUrlRequest) returns (SendUrlReply) {}
+}
+

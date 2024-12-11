@@ -6,9 +6,10 @@ depthai
 google-api-python-client
 google-cloud-speech
 google-generativeai
--e akari_rag_chatbot/lib/akari_chatgpt_bot/gpt-stream-json-parser/
+-e lib/akari_rag_chatbot/lib/akari_chatgpt_bot/gpt-stream-json-parser/
 grpcio
 grpcio-tools
+ipython
 langchain
 numpy==1.26.0
 openai
@@ -16,8 +17,10 @@ opencv-python
 PyAudio
 PyJapanglish
 python-dotenv
+qrcode
 six
 SpeechRecognition
+streamlit
 tiktoken
 timeout_decorator
 weaviate-client
