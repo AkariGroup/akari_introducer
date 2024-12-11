@@ -1,6 +1,6 @@
 # akari_introducer
 
-AKARIの音声対話botにWeaviateを用いたRAG機能を追加するアプリ
+AKARIについての質問に対して、webブラウザ上にYoutubeやwebマニュアルのページなどを表示しながら回答する展示会用音声対話botアプリ。
 
 ## submoduleの更新
 `git submodule update --init --recursive`  
