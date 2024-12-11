@@ -1,3 +1,6 @@
 [submodule "lib/akari_rag_chatbot"]
 	path = lib/akari_rag_chatbot
 	url = https://github.com/AkariGroup/akari_rag_chatbot.git
+[submodule "docs"]
+	path = docs
+	url = https://github.com/AkariGroup/docs.git
