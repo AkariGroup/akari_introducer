@@ -50,12 +50,11 @@ AKARIの音声対話botにWeaviateを用いたRAG機能を追加するアプリ
 
 1. docsを[READMEの手順](https://github.com/AkariGroup/docs/blob/main/README.md)に沿ってbuildする。  
   `cd akari_introducer/docs`  
-  以下READMEの手順の2.以降を実行する。  
+  READMEの手順の2.以降を実行し、docsをbuildする。  
 
 2. buildしたデータを加工する。  
   `cd ../`  
   `python3 manual_converter.py -p docs/_build/html/_sources/source -s rag_data/`  
-
   `docs/_build/html/_sources/source`には、buildする際に生成される、sphinxのソースファイルを元にしたtxtファイルが格納されている。  
   manual_converter.pyは、このtxtファイルを加工し、表題の飾り文字部分をその表題へのリンクに変換している。  
 
