@@ -5,15 +5,15 @@ import os
 import sys
 from typing import Generator
 import openai
+import google.generativeai as genai
 
 from lib.akari_rag_chatbot.lib.akari_chatgpt_bot.lib.chat_akari_grpc import (
     ChatStreamAkariGrpc,
 )
 from gpt_stream_parser import force_parse_json
+from lib.akari_rag_chatbot.lib.akari_chatgpt_bot.lib.conf import GEMINI_APIKEY
 
-sys.path.append(
-    os.path.join(os.path.dirname(__file__), "grpc")
-)
+sys.path.append(os.path.join(os.path.dirname(__file__), "grpc"))
 import streamlit_server_pb2
 import streamlit_server_pb2_grpc
 
@@ -130,6 +130,93 @@ class ChatStreamAkariIntroducer(ChatStreamAkariGrpc):
                                         yield sentence
                                     break
 
+    def chat_and_link_gemini(
+        self,
+        messages: list,
+        model: str = "gemini-2.0-flash-exp",
+        temperature: float = 0.7,
+        short_response: bool = False,
+    ) -> Generator[str, None, None]:
+        """ChatGPTを使用してチャットとモーションを処理するメソッド。
+
+        Args:
+            messages (list): チャットメッセージのリスト。
+            model (str, optional): 使用するOpenAI GPTモデル。デフォルトは"gpt-4"。
+            temperature (float, optional): サンプリング温度。デフォルトは0.7。
+            short_response (bool, optional): 相槌などの短応答のみを返すか、通常の応答を返すか。
+
+        Yields:
+            str: チャット応答のジェネレータ。
+
+        """
+        if GEMINI_APIKEY is None:
+            print("Gemini API key is not set.")
+            return
+        system_instruction = ""
+        new_messages = []
+        for message in messages:
+            if "content" in message:
+                message["parts"] = message.pop("content")
+            if message["role"] == "system":
+                system_instruction = message["parts"]
+                continue
+            elif message["role"] == "assistant":
+                message["role"] = "model"
+            new_messages.append(message)
+        if system_instruction == "":
+            model = genai.GenerativeModel(
+                model_name=model,
+                generation_config={"response_mime_type": "application/json"},
+            )
+        else:
+            model = genai.GenerativeModel(
+                model_name=model,
+                system_instruction=system_instruction,
+                generation_config={"response_mime_type": "application/json"},
+            )
+        chat = model.start_chat(history=new_messages[:-1])
+        message = f"「{new_messages[-1]['parts']}」に対する回答と、回答に関連するリンクがある場合は一つ選択し、下記のJSON形式で出力してください。{{\"link\": 関連するリンク, \"talk\": 回答}}"
+        responses = chat.send_message(message, stream=True)
+        full_response = ""
+        real_time_response = ""
+        sentence_index = 0
+        get_link = False
+        for response in responses:
+            text = response.text
+            if text is None:
+                pass
+            else:
+                full_response += text
+                real_time_response += text
+                try:
+                    data_json = json.loads(full_response)
+                    found_last_char = False
+                    for char in self.last_char:
+                        if real_time_response[-1].find(char) >= 0:
+                            found_last_char = True
+                    if not found_last_char:
+                        data_json["talk"] = data_json["talk"] + "。"
+                except BaseException:
+                    data_json = force_parse_json(full_response)
+                if data_json is not None:
+                    if "talk" in data_json:
+                        if not get_link and "link" in data_json:
+                            get_link = True
+                            link = data_json["link"]
+                            print(f"============Link: {link}")
+                            asyncio.run(self.send_link(link))
+                        real_time_response = str(data_json["talk"])
+                        for char in self.last_char:
+                            pos = real_time_response[sentence_index:].find(char)
+                            if pos >= 0:
+                                sentence = real_time_response[
+                                    sentence_index : sentence_index + pos + 1
+                                ]
+                                sentence_index += pos + 1
+                                if sentence != "":
+                                    yield sentence
+                                break
+
     def chat_and_link(
         self,
         messages: list,
@@ -148,6 +235,12 @@ class ChatStreamAkariIntroducer(ChatStreamAkariGrpc):
         """
         if model in self.openai_model_name:
             yield from self.chat_and_link_gpt(
+                messages=messages,
+                model=model,
+                temperature=temperature,
+            )
+        elif model in self.gemini_model_name:
+            yield from self.chat_and_link_gemini(
                 messages=messages,
                 model=model,
                 temperature=temperature,
